@@ -10,6 +10,7 @@
   --danger: #c62828;
   --sidebar-w: 340px;
   --topbar-h: 52px;
+  --sheet-peek: 58px;
 }
 
 * { box-sizing: border-box; }
@@ -20,17 +21,26 @@ html, body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: var(--ink);
   background: var(--bg);
+  overscroll-behavior: none;
 }
 
+body { height: 100dvh; }
+
+button, .station-row, .line-row { touch-action: manipulation; }
+
 #topbar {
-  height: var(--topbar-h);
+  height: calc(var(--topbar-h) + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 14px;
+  padding-left: 14px;
+  padding-right: 14px;
   background: #101418;
   color: #fff;
 }
+
+#topbar .title-short { display: none; }
 
 #topbar h1 {
   font-size: 16px;
@@ -53,16 +63,39 @@ html, body {
   vertical-align: -3px;
 }
 
-#sidebar-toggle {
-  display: none;
+#sheet-handle {
+  display: none; /* mobile only */
+  width: 100%;
+  border: none;
   background: none;
-  border: 1px solid #3a4048;
-  color: #fff;
-  font-size: 16px;
-  border-radius: 6px;
-  padding: 4px 9px;
+  font: inherit;
+  color: var(--ink);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
   cursor: pointer;
 }
+
+#sheet-handle .grabber {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 42px;
+  height: 4px;
+  border-radius: 2px;
+  background: #d0d4d9;
+}
+
+#sheet-summary { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+#sheet-handle .chevron {
+  margin-left: auto;
+  color: var(--ink-soft);
+  transition: transform .2s ease;
+}
+
+body.sheet-open #sheet-handle .chevron { transform: rotate(180deg); }
 
 #topbar-progress {
   margin-left: auto;
@@ -93,7 +126,7 @@ html, body {
 
 #layout {
   display: flex;
-  height: calc(100% - var(--topbar-h));
+  height: calc(100% - var(--topbar-h) - env(safe-area-inset-top, 0px));
 }
 
 #sidebar {
@@ -273,6 +306,20 @@ html, body {
 
 #map { flex: 1; min-width: 0; background: #e9ecef; }
 
+.locate-control a {
+  font-size: 19px;
+  line-height: 30px;
+  width: 34px !important;
+  height: 34px !important;
+  color: #1a73e8;
+}
+
+.locate-control a.locating { animation: locate-pulse 1s infinite; }
+
+@keyframes locate-pulse {
+  50% { opacity: .35; }
+}
+
 /* popup */
 .popup-station { min-width: 190px; }
 .popup-station .p-name { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
@@ -297,20 +344,55 @@ html, body {
   border: 1px solid #f1c7c7;
 }
 
-/* mobile */
+/* bigger touch targets on touch devices */
+@media (pointer: coarse) {
+  .station-row { padding: 10px 6px; }
+  .station-row input[type="checkbox"] { width: 20px; height: 20px; }
+  .line-row { padding: 9px 6px; }
+  .popup-station button { min-height: 44px; }
+  .tool-row button { padding: 11px 14px; }
+  #search { font-size: 16px; /* prevents iOS input auto-zoom */ }
+}
+
+/* mobile: bottom sheet over a full-screen map */
 @media (max-width: 760px) {
-  #sidebar-toggle { display: block; }
-  #topbar-progress .bar { display: none; }
+  #topbar .title-long { display: none; }
+  #topbar .title-short { display: inline; }
+  #topbar-progress .bar { width: 90px; }
+
+  #map { position: absolute; inset: calc(var(--topbar-h) + env(safe-area-inset-top, 0px)) 0 0 0; }
+
   #sidebar {
-    position: absolute;
+    position: fixed;
     z-index: 1100;
-    top: var(--topbar-h);
-    bottom: 0;
     left: 0;
-    width: min(85vw, var(--sidebar-w));
-    box-shadow: 4px 0 18px rgba(0,0,0,.18);
-    transform: translateX(-105%);
-    transition: transform .22s ease;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    max-height: 78dvh;
+    border-right: none;
+    border-top: 1px solid var(--line);
+    border-radius: 16px 16px 0 0;
+    background: var(--bg);
+    box-shadow: 0 -6px 24px rgba(0,0,0,.16);
+    padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(calc(100% - var(--sheet-peek)));
+    transition: transform .25s ease;
   }
-  body.sidebar-open #sidebar { transform: translateX(0); }
+
+  body.sheet-open #sidebar { transform: translateY(0); }
+
+  /* collapsed sheet: hide everything but the handle, and lock scrolling */
+  body:not(.sheet-open) #sidebar { overflow: hidden; }
+
+  #sheet-handle {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--bg);
+    min-height: var(--sheet-peek);
+    padding-top: 16px;
+  }
 }

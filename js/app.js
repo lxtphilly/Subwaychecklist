@@ -35,7 +35,14 @@
   }
 
   // ---- map ------------------------------------------------------------
-  var map = L.map("map", { zoomControl: true }).setView([40.734, -73.925], 11);
+  var isTouch = window.matchMedia("(pointer: coarse)").matches;
+
+  // Canvas renders ~1500 shapes far faster than SVG on phones, and its hit
+  // tolerance gives station dots a finger-sized tap target.
+  var renderer = L.canvas({ tolerance: isTouch ? 12 : 4 });
+
+  var map = L.map("map", { zoomControl: !isTouch, renderer: renderer })
+    .setView([40.734, -73.925], 11);
 
   L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
     attribution:
@@ -58,7 +65,8 @@
 
   function markerRadius() {
     var z = map.getZoom();
-    return z >= 15 ? 8 : z >= 13 ? 6 : z >= 12 ? 5 : 4;
+    var r = z >= 15 ? 8 : z >= 13 ? 6 : z >= 12 ? 5 : 4;
+    return isTouch ? Math.max(r, 5) : r;
   }
 
   var stationMarkers = {}; // id -> circleMarker
@@ -79,6 +87,42 @@
     Object.keys(stationMarkers).forEach(function (id) {
       stationMarkers[id].setRadius(r);
     });
+  });
+
+  // "Locate me" control — which station am I standing at?
+  var locateDot = null;
+  var LocateControl = L.Control.extend({
+    options: { position: "topleft" },
+    onAdd: function () {
+      var div = L.DomUtil.create("div", "leaflet-bar locate-control");
+      var a = L.DomUtil.create("a", "", div);
+      a.href = "#";
+      a.title = "Show my location";
+      a.setAttribute("aria-label", "Show my location");
+      a.innerHTML = "◎";
+      L.DomEvent.on(a, "click", function (e) {
+        L.DomEvent.stop(e);
+        a.classList.add("locating");
+        map.locate({ setView: true, maxZoom: 15, enableHighAccuracy: true });
+      });
+      map.on("locationfound locationerror", function () {
+        a.classList.remove("locating");
+      });
+      return div;
+    }
+  });
+  map.addControl(new LocateControl());
+
+  map.on("locationfound", function (e) {
+    if (locateDot) map.removeLayer(locateDot);
+    locateDot = L.layerGroup([
+      L.circle(e.latlng, { radius: e.accuracy / 2, weight: 1, color: "#1a73e8", fillOpacity: 0.08 }),
+      L.circleMarker(e.latlng, { radius: 7, weight: 2.5, color: "#fff", fillColor: "#1a73e8", fillOpacity: 1 })
+    ]).addTo(map);
+  });
+
+  map.on("locationerror", function () {
+    alert("Couldn't get your location. Check that location access is allowed for this site.");
   });
 
   // ---- rendering ------------------------------------------------------
@@ -160,7 +204,8 @@
     lineList: document.getElementById("line-list"),
     stationList: document.getElementById("station-list"),
     search: document.getElementById("search"),
-    includeSIR: document.getElementById("include-sir")
+    includeSIR: document.getElementById("include-sir"),
+    sheetSummary: document.getElementById("sheet-summary")
   };
 
   function counted(s) {
@@ -179,6 +224,7 @@
     el.topbarBar.style.width = pct + "%";
     el.bigCount.innerHTML = done + ' <span class="total">/ ' + total + "</span>";
     el.bigBar.style.width = pct + "%";
+    el.sheetSummary.textContent = done + " / " + total + " stations visited";
   }
 
   function refreshLineList() {
@@ -244,7 +290,7 @@
       row.addEventListener("click", function () {
         map.setView([s.lat, s.lon], Math.max(map.getZoom(), 14));
         stationMarkers[s.id].openPopup();
-        if (window.innerWidth <= 760) document.body.classList.remove("sidebar-open");
+        if (window.innerWidth <= 760) document.body.classList.remove("sheet-open");
       });
       el.stationList.appendChild(row);
     });
@@ -280,8 +326,11 @@
 
   el.search.addEventListener("input", refreshStationList);
 
-  document.getElementById("sidebar-toggle").addEventListener("click", function () {
-    document.body.classList.toggle("sidebar-open");
+  document.getElementById("sheet-handle").addEventListener("click", function () {
+    document.body.classList.toggle("sheet-open");
+    if (!document.body.classList.contains("sheet-open")) {
+      document.getElementById("sidebar").scrollTo(0, 0);
+    }
   });
 
   // export / import / reset
