@@ -20,6 +20,12 @@ color as you complete the system.
 - **Progress lives in your browser** (localStorage) with JSON
   export/import for backups or moving between devices, plus an optional
   toggle to include/exclude the Staten Island Railway from your total.
+- **Built for phones**: full-screen map with a slide-up bottom sheet,
+  finger-sized tap targets (canvas rendering with touch tolerance), and a
+  **locate-me button** so you can see which station you're standing at.
+- **Installable PWA**: Add to Home Screen and it launches like a native
+  app. A service worker caches the app (and map tiles as you browse), so
+  it keeps working underground with no signal.
 - No backend, no build step, no accounts — a fully static site.
 
 A note on counting: station complexes (e.g. 14 St–Union Sq) appear as their
