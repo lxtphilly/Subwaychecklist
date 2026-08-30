@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NYC Subway Station Checklist</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%230062CF'/><text x='50' y='68' font-size='55' font-family='Helvetica,Arial' font-weight='bold' fill='white' text-anchor='middle'>✓</text></svg>" />
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header id="topbar">
+    <button id="sidebar-toggle" aria-label="Toggle sidebar">☰</button>
+    <h1><span class="bullet">✓</span> NYC Subway Station Checklist</h1>
+    <div id="topbar-progress">
+      <span id="topbar-count"></span>
+      <div class="bar"><div id="topbar-bar-fill" class="bar-fill"></div></div>
+    </div>
+  </header>
+
+  <div id="layout">
+    <aside id="sidebar">
+      <section class="panel" id="summary-panel">
+        <div id="big-count"></div>
+        <div id="big-label">stations visited</div>
+        <div class="bar big"><div id="big-bar-fill" class="bar-fill"></div></div>
+        <label class="sir-toggle">
+          <input type="checkbox" id="include-sir" />
+          Include Staten Island Railway in total
+        </label>
+      </section>
+
+      <section class="panel">
+        <h2>Lines <span class="hint">click a line to focus it</span></h2>
+        <div id="line-list"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Stations</h2>
+        <input type="search" id="search" placeholder="Search stations…" autocomplete="off" />
+        <div id="station-list"></div>
+      </section>
+
+      <section class="panel" id="tools-panel">
+        <h2>Backup</h2>
+        <div class="tool-row">
+          <button id="export-btn">Export progress</button>
+          <button id="import-btn">Import</button>
+          <button id="reset-btn" class="danger">Reset</button>
+        </div>
+        <input type="file" id="import-file" accept="application/json" hidden />
+        <p class="fineprint">Progress is saved in this browser (localStorage). Export a backup before clearing browser data or switching devices.</p>
+      </section>
+    </aside>
+
+    <main id="map"></main>
+  </div>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="data/subway_data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
